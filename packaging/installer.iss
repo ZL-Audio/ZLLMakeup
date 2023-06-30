@@ -1,5 +1,5 @@
 #define Version Trim(FileRead(FileOpen("..\VERSION")))
-#define PluginName "ZL Loudness Make-up"
+#define PluginName "ZL Loudness Makeup"
 #define ProjectName "ZLLMakeup"
 #define Publisher "ZL"
 #define Year GetDateTimeString("2023","","")

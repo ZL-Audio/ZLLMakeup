@@ -14,6 +14,8 @@ PluginProcessor::PluginProcessor()
                      ZLDsp::getParameterLayout()),
           controller(this, parameters),
           controllerAttach(controller, parameters) {
+    parameters.state.addChild (
+            { "uiState", { { "width", ZLInterface::WindowWidth }, { "height", ZLInterface::WindowHeight } }, {} }, -1, nullptr);
 }
 
 PluginProcessor::~PluginProcessor() {
@@ -118,8 +120,8 @@ bool PluginProcessor::hasEditor() const {
 }
 
 juce::AudioProcessorEditor *PluginProcessor::createEditor() {
-//    return new PluginEditor(*this);
-    return new juce::GenericAudioProcessorEditor(*this);
+    return new PluginEditor(*this);
+//    return new juce::GenericAudioProcessorEditor(*this);
 }
 
 //==============================================================================
@@ -141,4 +143,8 @@ void PluginProcessor::setStateInformation(const void *data, int sizeInBytes) {
 // This creates new instances of the plugin..
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {
     return new PluginProcessor();
+}
+
+Controller<float>* PluginProcessor::getController() {
+    return &controller;
 }

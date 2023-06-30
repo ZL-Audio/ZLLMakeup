@@ -53,6 +53,8 @@ public:
 
     void setStateInformation(const void *data, int sizeInBytes) override;
 
+    Controller<float>* getController();
+
 private:
 
     Controller<float> controller;

@@ -70,7 +70,7 @@ namespace ZLDsp {
         auto static constexpr ID = "gain";
         auto static constexpr name = "Gain (dB)";
         inline auto static const range =
-                juce::NormalisableRange<float>(-30., 30.f, 0.1f);
+                juce::NormalisableRange<float>(-30., 30.f, 0.01f);
         auto static constexpr defaultV = 0.f;
     };
 

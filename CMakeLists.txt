@@ -97,6 +97,15 @@ set(SourceFiles
         Source/GUI/NameLookAndFeel.h
         Source/GUI/RotarySliderComponent.h
         Source/GUI/RotarySliderLookAndFeel.h
+
+        Source/Panel/MainPanel.h
+        Source/Panel/MainPanel.cpp
+        Source/Panel/TopPanel.h
+        Source/Panel/TopPanel.cpp
+        Source/Panel/BottomPanel.h
+        Source/Panel/BottomPanel.cpp
+        Source/Panel/LogoPanel.h
+        Source/Panel/LogoPanel.cpp
         )
 
 target_sources("${PROJECT_NAME}" PRIVATE ${SourceFiles})

@@ -13,7 +13,7 @@ concurrency:
 
 env:
   PROJECT_NAME: "ZLLMakeup"
-  PRODUCT_NAME: "ZL Loudness Make-up"
+  PRODUCT_NAME: "ZL Loudness Makeup"
   BUILD_TYPE: Release
   BUILD_DIR: Builds
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -30,7 +30,7 @@ See the releases for the latest version.
 
 ## License
 
-ZLLMatch has a MIT license, as found in the [LICENSE](LICENSE) file.
+ZLLMakeup has a MIT license, as found in the [LICENSE](LICENSE) file.
 
 Copyright (c) 2023 - [zsliu98](https://github.com/zsliu98)
 

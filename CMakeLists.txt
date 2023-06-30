@@ -63,7 +63,7 @@ juce_add_plugin("${PROJECT_NAME}"
         VST3_CATEGORIES Analyzer
         AU_MAIN_TYPE kAudioUnitType_Effect
         FORMATS VST3 AU               # The formats to build. Other valid formats are: VST3 AAX Unity VST AU AUv3
-        PRODUCT_NAME "ZL Loudness Match")        # The name of the final executable, which can differ from the target name
+        PRODUCT_NAME "ZL Loudness Makeup")        # The name of the final executable, which can differ from the target name
 
 # C++20, please
 target_compile_features("${PROJECT_NAME}" PRIVATE cxx_std_20)
@@ -74,6 +74,19 @@ set(SourceFiles
         Source/PluginEditor.cpp
         Source/PluginProcessor.h
         Source/PluginProcessor.cpp
+
+        Source/DSP/dsp_defines.h
+        Source/DSP/FIFOAudioBuffer.h
+        Source/DSP/FIFOAudioBuffer.cpp
+        Source/DSP/FixedAudioBuffer.h
+        Source/DSP/FixedAudioBuffer.cpp
+        Source/DSP/Controller.h
+        Source/DSP/Controller.cpp
+        Source/DSP/Tracker/Tracker.h
+        Source/DSP/Tracker/RMSTracker.h
+        Source/DSP/Tracker/RMSTracker.cpp
+        Source/DSP/Tracker/SecondOrderIIRFilter.h
+        Source/DSP/Tracker/SecondOrderIIRFilter.cpp
 
         Source/GUI/interface_defines.h
         Source/GUI/ButtonComponent.h

@@ -37,7 +37,6 @@ TopPanel::TopPanel(juce::AudioProcessorValueTreeState &parameters,
                         parameters, comboboxID[i], (*comboboxList[i])->getComboBox()));
     }
     // init changing value label
-    std::array changingValueList{&gainValue};
     gainValue = std::make_unique<ChangingValueComponent>(controller);
     addAndMakeVisible(*gainValue);
 

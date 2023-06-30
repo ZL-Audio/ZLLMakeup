@@ -32,7 +32,8 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
         isSegmentReset.store(false);
         setSegment(segment.load());
     }
-    if (modeID.load() == ZLDsp::mode::effect) {
+    isPlaying.store(m_processor->getPlayHead()->getPosition()->getIsPlaying());
+    if (modeID.load() == ZLDsp::mode::effect && isPlaying.load()) {
         fixedAudioBuffer.pushBuffer(buffer);
         while (fixedAudioBuffer.isSubReady()) {
             fixedAudioBuffer.popSubBuffer();
@@ -175,6 +176,11 @@ FloatType Controller<FloatType>::getGain() {
     return gain.load();
 }
 
+template<typename FloatType>
+bool Controller<FloatType>::getIsPlaying() {
+    return isPlaying.load();
+}
+
 template
 class Controller<float>;
 
@@ -205,7 +211,7 @@ ControllerAttach<FloatType>::~ControllerAttach() {
 
 template<typename FloatType>
 void ControllerAttach<FloatType>::timerCallback() {
-    if (modeID == ZLDsp::mode::effect) {
+    if (modeID == ZLDsp::mode::effect && controller->getIsPlaying()) {
         apvts->getParameter(ZLDsp::gain::ID)->beginChangeGesture();
         apvts->getParameter(ZLDsp::gain::ID)
                 ->setValueNotifyingHost(
@@ -248,7 +254,7 @@ void ControllerAttach<FloatType>::parameterChanged(const juce::String &parameter
     } else if (parameterID == ZLDsp::mode::ID) {
         modeID.store(static_cast<int>(newValue));
         if (modeID.load() == ZLDsp::mode::effect) {
-            startTimerHz(60);
+            startTimerHz(10);
         } else {
             stopTimer();
         }

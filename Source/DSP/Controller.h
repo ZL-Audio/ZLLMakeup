@@ -39,6 +39,8 @@ public:
 
     FloatType getGain();
 
+    bool getIsPlaying();
+
 private:
     juce::AudioProcessor *m_processor;
     juce::AudioProcessorValueTreeState *apvts;
@@ -49,7 +51,7 @@ private:
 
     juce::dsp::DelayLine<FloatType> delayLineDSP;
     juce::dsp::Gain<FloatType> gainDSP;
-    std::atomic<bool> isReset = false, isProcess = false, isSegmentReset = false;
+    std::atomic<bool> isPlaying = false, isSegmentReset = false;
 
     FixedAudioBuffer<FloatType> fixedAudioBuffer;
     RMSTracker<FloatType> mainPreTracker, mainAfterTracker, auxTracker;

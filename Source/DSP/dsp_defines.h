@@ -20,7 +20,7 @@ namespace ZLDsp {
         auto static constexpr name = "Segment (ms)";
         inline auto static const range =
                 juce::NormalisableRange<float>(10.f, 100.f, 1.f);
-        auto static constexpr defaultV = 10.f;
+        auto static constexpr defaultV = 20.f;
     };
 
     class window : public FloatParameters<window> {
@@ -29,7 +29,7 @@ namespace ZLDsp {
         auto static constexpr name = "Window";
         inline auto static const range =
                 juce::NormalisableRange<float>(1.f, 50.0f, 1.f);
-        auto static constexpr defaultV = 10.f;
+        auto static constexpr defaultV = 20.f;
     };
 
     class lookahead : public FloatParameters<lookahead> {

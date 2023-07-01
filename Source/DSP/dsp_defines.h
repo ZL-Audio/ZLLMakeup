@@ -87,8 +87,8 @@ namespace ZLDsp {
 
     class ceil : public BoolParameters<ceil> {
     public:
-        auto static constexpr ID = "ceil";
-        auto static constexpr name = "Ceil";
+        auto static constexpr ID = "accurate";
+        auto static constexpr name = "Accurate";
         auto static constexpr defaultV = false;
     };
 

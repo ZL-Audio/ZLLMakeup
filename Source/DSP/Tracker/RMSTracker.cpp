@@ -74,12 +74,12 @@ void RMSTracker<FloatType>::process(const juce::AudioBuffer<FloatType> &buffer) 
     }
 
     _ms = _ms / static_cast<FloatType> (bufferCopy.getNumSamples());
-    if (loudness.size() == size) {
+    loudness.push_back(_ms);
+    mLoudness += _ms;
+    while (loudness.size() > size) {
         mLoudness -= loudness.front();
         loudness.pop_front();
     }
-    loudness.push_back(_ms);
-    mLoudness += _ms;
 
     iLoudness += _ms;
     numBuffer += 1;

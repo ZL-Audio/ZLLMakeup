@@ -25,10 +25,10 @@ public:
 
     inline FloatType getMomentaryLoudness() override {
         FloatType meanSquare = 0;
-        if (size > 0) {
-            meanSquare = mLoudness / static_cast<FloatType>(size);
+        if (loudness.size() > 0) {
+            meanSquare = mLoudness / static_cast<FloatType>(loudness.size());
         }
-        return juce::Decibels::gainToDecibels(std::sqrt(meanSquare));
+        return juce::Decibels::gainToDecibels(meanSquare) * static_cast<FloatType>(0.5);
     }
 
     inline FloatType getIntegratedLoudness() override {
@@ -36,7 +36,7 @@ public:
         if (numBuffer > 0) {
             meanSquare = iLoudness / static_cast<FloatType>(numBuffer);
         }
-        return juce::Decibels::gainToDecibels(std::sqrt(meanSquare));
+        return juce::Decibels::gainToDecibels(meanSquare) * static_cast<FloatType>(0.5);
     }
 
     void process(const juce::AudioBuffer<FloatType> &buffer) override;

@@ -22,6 +22,8 @@ Controller<FloatType>::Controller(juce::AudioProcessor *processor,
 
 template<typename FloatType>
 void Controller<FloatType>::prepareToPlay(juce::dsp::ProcessSpec spec) {
+    mainTracker.prepareToPlay(spec);
+    auxTracker.prepareToPlay(spec);
     spec.numChannels = spec.numChannels * 2;
     fixedAudioBuffer.prepareToPlay(spec);
 }
@@ -36,6 +38,9 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
     if (std::abs(lastBufferSize + lastBufferTime -
                  currentPos->getTimeInSamples().orFallback(0)) > buffer.getNumSamples()) {
         isPlaying.store(false);
+        for (auto &f: {&mainSubTracker, &auxSubTracker, &mainTracker, &auxTracker}) {
+            (*f).reset();
+        }
     } else {
         isPlaying.store(true);
     }
@@ -49,13 +54,18 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
             // calculate loudness makeup
             auto mainBusNumChannel = static_cast<int>(
                     fixedAudioBuffer.getSubSpec().numChannels / 2);
-            mainPreTracker.process(
+            mainSubTracker.process(
                     fixedAudioBuffer.getSubBufferChannels(0, mainBusNumChannel));
-            auxTracker.process(fixedAudioBuffer.getSubBufferChannels(mainBusNumChannel,
-                                                                     2 *
-                                                                     mainBusNumChannel));
-            auto actualGain = auxTracker.getMomentaryLoudness() -
-                              mainPreTracker.getMomentaryLoudness();
+            auxSubTracker.process(fixedAudioBuffer.getSubBufferChannels(mainBusNumChannel,
+                                                                        2 *
+                                                                        mainBusNumChannel));
+            auto actualGain = auxSubTracker.getMomentaryLoudness() -
+                              mainSubTracker.getMomentaryLoudness();
+            if (ceil.load()) {
+                actualGain += (auxTracker.getIntegratedLoudness() -
+                               mainTracker.getIntegratedLoudness()) *
+                              static_cast<FloatType>(1.01);
+            }
             actualGain = juce::jlimit(-bound.load(), bound.load(), actualGain);
 
             // apply loudness makeup
@@ -64,16 +74,6 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
                                                          static_cast<size_t>(mainBusNumChannel));
             delayLineDSP.process(
                     juce::dsp::ProcessContextReplacing<FloatType>(mainBlock));
-
-            if (ceil.load()) {
-                actualGain = juce::jmin(actualGain,
-                                        -juce::Decibels::gainToDecibels(
-                                                fixedAudioBuffer.getSubBufferChannels(
-                                                        0,
-                                                        mainBusNumChannel).getMagnitude(
-                                                        0,
-                                                        static_cast<int>(fixedAudioBuffer.getSubSpec().maximumBlockSize))));
-            }
 
             gain.store(actualGain);
             gainDSP.setGainDecibels(
@@ -84,6 +84,10 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
             fixedAudioBuffer.pushSubBuffer();
         }
         fixedAudioBuffer.popBuffer(buffer);
+        if (ceil.load()) {
+            mainTracker.process(m_processor->getBusBuffer(buffer, true, 0));
+            auxTracker.process(m_processor->getBusBuffer(buffer, true, 1));
+        }
     }
     if (modeID.load() == ZLDsp::mode::envelope) {
         auto currentGain = juce::Decibels::decibelsToGain(
@@ -108,7 +112,7 @@ void Controller<FloatType>::setSegment(FloatType v) {
     auto subSpec = fixedAudioBuffer.getSubSpec();
     auto subBusSpec = subSpec;
     subBusSpec.numChannels = subBusSpec.numChannels / 2;
-    for (auto &f: {&mainPreTracker, &mainAfterTracker, &auxTracker}) {
+    for (auto &f: {&mainSubTracker, &auxSubTracker}) {
         (*f).prepareToPlay(subBusSpec);
     }
     delayLineDSP.prepare(subBusSpec);
@@ -135,7 +139,7 @@ void Controller<FloatType>::setLookahead(FloatType v) {
 template<typename FloatType>
 void Controller<FloatType>::setWindow(FloatType v) {
     window.store(v);
-    for (auto &f: {&mainPreTracker, &mainAfterTracker, &auxTracker}) {
+    for (auto &f: {&mainSubTracker, &auxSubTracker}) {
         (*f).setMomentarySize(static_cast<size_t>(v));
     }
     setLookahead(lookahead.load());
@@ -164,19 +168,23 @@ void Controller<FloatType>::setModeID(int ID) {
 template<typename FloatType>
 void Controller<FloatType>::setMeasurementID(int ID) {
     if (ID == ZLDsp::measurement::rms) {
-        mainPreTracker.setKWeight(false);
-        mainAfterTracker.setKWeight(false);
-        auxTracker.setKWeight(false);
+        for (auto &f: {&mainSubTracker, &auxSubTracker, &mainTracker, &auxTracker}) {
+            (*f).setKWeight(false);
+        }
     } else if (ID == ZLDsp::measurement::k_rms) {
-        mainPreTracker.setKWeight(true);
-        mainAfterTracker.setKWeight(true);
-        auxTracker.setKWeight(true);
+        for (auto &f: {&mainSubTracker, &auxSubTracker, &mainTracker, &auxTracker}) {
+            (*f).setKWeight(true);
+        }
     }
 }
 
 template<typename FloatType>
 void Controller<FloatType>::setCeil(bool f) {
     ceil.store(f);
+    if (f) {
+        mainTracker.reset();
+        auxTracker.reset();
+    }
 }
 
 template<typename FloatType>

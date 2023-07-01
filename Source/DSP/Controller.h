@@ -55,7 +55,8 @@ private:
     int64_t lastBufferSize = 0, lastBufferTime = 0;
 
     FixedAudioBuffer<FloatType> fixedAudioBuffer;
-    RMSTracker<FloatType> mainPreTracker, mainAfterTracker, auxTracker;
+    RMSTracker<FloatType> mainSubTracker, auxSubTracker;
+    RMSTracker<FloatType> mainTracker, auxTracker;
 };
 
 template<typename FloatType>

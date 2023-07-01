@@ -40,6 +40,7 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
     if (std::abs(lastBufferSize + lastBufferTime -
                  currentPos->getTimeInSamples().orFallback(0)) > buffer.getNumSamples()) {
         isPlaying.store(false);
+        gain.store(0);
         for (auto &f: {&mainSubTracker, &auxSubTracker, &mainTracker, &auxTracker}) {
             (*f).reset();
         }

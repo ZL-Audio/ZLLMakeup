@@ -68,8 +68,6 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
                                mainTracker.getIntegratedLoudness()) *
                               static_cast<FloatType>(1.01);
             }
-            actualGain = static_cast<FloatType>(juce::roundToInt(
-                    actualGain * sensitivity.load())) / sensitivity.load();
             actualGain = juce::jlimit(-bound.load(), bound.load(), actualGain);
 
             // apply loudness makeup

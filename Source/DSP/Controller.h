@@ -52,6 +52,7 @@ private:
     juce::dsp::DelayLine<FloatType> delayLineDSP;
     juce::dsp::Gain<FloatType> gainDSP;
     std::atomic<bool> isPlaying = false, isSegmentReset = false;
+    int64_t lastBufferSize = 0, lastBufferTime = 0;
 
     FixedAudioBuffer<FloatType> fixedAudioBuffer;
     RMSTracker<FloatType> mainPreTracker, mainAfterTracker, auxTracker;

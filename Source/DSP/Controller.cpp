@@ -32,7 +32,15 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
         isSegmentReset.store(false);
         setSegment(segment.load());
     }
-    isPlaying.store(m_processor->getPlayHead()->getPosition()->getIsPlaying());
+    auto currentPos = m_processor->getPlayHead()->getPosition();
+    if (std::abs(lastBufferSize + lastBufferTime -
+                 currentPos->getTimeInSamples().orFallback(0)) > buffer.getNumSamples()) {
+        isPlaying.store(false);
+    } else {
+        isPlaying.store(true);
+    }
+    lastBufferSize = buffer.getNumSamples();
+    lastBufferTime = currentPos->getTimeInSamples().orFallback(0);
     if (modeID.load() == ZLDsp::mode::effect && isPlaying.load()) {
         fixedAudioBuffer.pushBuffer(buffer);
         while (fixedAudioBuffer.isSubReady()) {

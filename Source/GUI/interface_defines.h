@@ -30,7 +30,7 @@ namespace ZLInterface {
     auto inline const FontHuge2 = 3.0f;
     auto inline const FontHuge3 = 4.5f;
 
-    auto inline const RefreshFreqHz = 120;
+    auto inline const RefreshFreqHz = 10;
 
     inline juce::Rectangle<float> fillRoundedShadowRectangle(juce::Graphics &g,
                                                              juce::Rectangle<float> boxBounds,

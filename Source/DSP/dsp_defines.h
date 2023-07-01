@@ -79,7 +79,7 @@ namespace ZLDsp {
         auto static constexpr ID = "sensitivity";
         auto static constexpr name = "Sensitivity";
         inline auto static const range =
-                juce::NormalisableRange<float>(1.f, 100.f, 1.f, 0.5f);
+                juce::NormalisableRange<float>(1.f, 100.f, 0.1f, 0.5f);
         auto static constexpr defaultV = 10.f;
     };
 

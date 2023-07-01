@@ -41,6 +41,7 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
                  currentPos->getTimeInSamples().orFallback(0)) > buffer.getNumSamples()) {
         isPlaying.store(false);
         gain.store(0);
+        gainDSP.setGainDecibels(0);
         for (auto &f: {&mainSubTracker, &auxSubTracker, &mainTracker, &auxTracker}) {
             (*f).reset();
         }
@@ -90,7 +91,7 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
             if (std::abs(gain.load() - actualGain) >= 1 / sensitivity.load()) {
                 gain.store(actualGain);
                 gainDSP.setGainDecibels(
-                        actualGain * ZLDsp::strength::formatV(strength.load()));
+                        gain.load() * ZLDsp::strength::formatV(strength.load()));
             }
             gainDSP.process(juce::dsp::ProcessContextReplacing<FloatType>(mainBlock));
 

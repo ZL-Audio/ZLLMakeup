@@ -22,7 +22,7 @@ public:
     void setMode(int modeID);
 
 private:
-    std::unique_ptr<RotarySliderComponent> strengthSlider, boundSlider, windowSlider, lookaheadSlider;
+    std::unique_ptr<RotarySliderComponent> strengthSlider, boundSlider, windowSlider, lookaheadSlider, sensitivitySlider;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachments;
 };
 

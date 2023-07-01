@@ -14,8 +14,8 @@ TopPanel::TopPanel(juce::AudioProcessorValueTreeState &parameters,
                         parameters, sliderID[i], (*sliderList[i])->getSlider()));
     }
     // init buttons
-    std::array buttonList{&ceilButton};
-    std::array buttonID{ZLDsp::ceil::ID};
+    std::array buttonList{&ceilButton, &accurateButton};
+    std::array buttonID{ZLDsp::ceil::ID, ZLDsp::accurate::ID};
     for (size_t i = 0; i < buttonList.size(); ++i) {
         *buttonList[i] = std::make_unique<ButtonComponent>(
                 parameters.getParameter(buttonID[i])->name);
@@ -53,15 +53,17 @@ void TopPanel::resized() {
     using Fr = juce::Grid::Fr;
 
     grid.templateRows = {Track(Fr(1)), Track(Fr(1))};
-    grid.templateColumns = {Track(Fr(1)), Track(Fr(1)), Track(Fr(1)), Track(Fr(1))};
+    grid.templateColumns = {Track(Fr(1)), Track(Fr(1)), Track(Fr(1)),
+                            Track(Fr(1)), Track(Fr(1))};
 
     grid.items = {
             juce::GridItem(logoPanel).withArea(1, 1),
-            juce::GridItem(*gainValue).withArea(1, 2, 2, 4),
+            juce::GridItem(*gainValue).withArea(1, 2, 2, 5),
             juce::GridItem(*modeBox).withArea(2, 1),
             juce::GridItem(*measurementBox).withArea(2, 2),
+            juce::GridItem(*accurateButton).withArea(2, 4),
             juce::GridItem(*ceilButton).withArea(2, 3),
-            juce::GridItem(*segmentSlider).withArea(1, 4, 3, 5),
+            juce::GridItem(*segmentSlider).withArea(1, 5, 3, 6),
     };
 
     grid.performLayout(getLocalBounds());
@@ -72,7 +74,7 @@ void TopPanel::setFontSize(float size) {
     for (auto const &c: sliderList) {
         (*c)->setFontSize(size);
     }
-    std::array buttonList{&ceilButton};
+    std::array buttonList{&ceilButton, &accurateButton};
     for (auto const &c: buttonList) {
         (*c)->setFontSize(size);
     }
@@ -89,7 +91,7 @@ void TopPanel::setMode(int modeID) {
         for (auto const &c: sliderList) {
             (*c)->setEditable(true);
         }
-        std::array buttonList{&ceilButton};
+        std::array buttonList{&ceilButton, &accurateButton};
         for (auto const &c: buttonList) {
             (*c)->setEditable(true);
         }
@@ -102,7 +104,7 @@ void TopPanel::setMode(int modeID) {
         for (auto const &c: sliderList) {
             (*c)->setEditable(false);
         }
-        std::array buttonList{&ceilButton};
+        std::array buttonList{&ceilButton, &accurateButton};
         for (auto const &c: buttonList) {
             (*c)->setEditable(false);
         }

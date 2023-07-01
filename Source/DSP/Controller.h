@@ -31,9 +31,13 @@ public:
 
     void setStrength(FloatType v);
 
+    void setSensitivity(FloatType v);
+
     void setModeID(int ID);
 
     void setMeasurementID(int ID);
+
+    void setAccurate(bool f);
 
     void setCeil(bool f);
 
@@ -45,9 +49,9 @@ private:
     juce::AudioProcessor *m_processor;
     juce::AudioProcessorValueTreeState *apvts;
 
-    std::atomic<FloatType> gain, lookahead, bound, strength, segment, window;
+    std::atomic<FloatType> gain, lookahead, bound, strength, segment, window, sensitivity;
     std::atomic<int> modeID;
-    std::atomic<bool> ceil;
+    std::atomic<bool> ceil, accurate;
 
     juce::dsp::DelayLine<FloatType> delayLineDSP;
     juce::dsp::Gain<FloatType> gainDSP;

@@ -70,8 +70,17 @@ namespace ZLDsp {
         auto static constexpr ID = "gain";
         auto static constexpr name = "Gain (dB)";
         inline auto static const range =
-                juce::NormalisableRange<float>(-30., 30.f, 0.01f);
+                juce::NormalisableRange<float>(-30., 30.f, 0.1f);
         auto static constexpr defaultV = 0.f;
+    };
+
+    class sensitivity : public FloatParameters<sensitivity> {
+    public:
+        auto static constexpr ID = "sensitivity";
+        auto static constexpr name = "Sensitivity";
+        inline auto static const range =
+                juce::NormalisableRange<float>(1.f, 100.f, 1.f, 0.5f);
+        auto static constexpr defaultV = 10.f;
     };
 
 
@@ -87,9 +96,16 @@ namespace ZLDsp {
 
     class ceil : public BoolParameters<ceil> {
     public:
+        auto static constexpr ID = "ceil";
+        auto static constexpr name = "Ceil";
+        auto static constexpr defaultV = false;
+    };
+
+    class accurate : public BoolParameters<accurate> {
+    public:
         auto static constexpr ID = "accurate";
         auto static constexpr name = "Accurate";
-        auto static constexpr defaultV = false;
+        auto static constexpr defaultV = true;
     };
 
     // choice
@@ -138,7 +154,8 @@ namespace ZLDsp {
         juce::AudioProcessorValueTreeState::ParameterLayout layout;
         layout.add(segment::get(), window::get(), lookahead::get(),
                    strength::get(), bound::get(), gain::get(),
-                   ceil::get(),
+                   sensitivity::get(),
+                   ceil::get(), accurate::get(),
                    measurement::get(), mode::get());
         return layout;
     }

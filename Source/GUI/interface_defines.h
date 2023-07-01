@@ -5,10 +5,10 @@
 
 namespace ZLInterface {
     auto inline const WindowHeight = 280;
-    auto inline const WindowWidth = 385;
-    auto inline const WindowFixedAspectRatio = 1.375;
+    auto inline const WindowWidth = 476;
+    auto inline const WindowFixedAspectRatio = 1.7;
     auto inline const WindowMinHeight = 200;
-    auto inline const WindowMinWidth = 275;
+    auto inline const WindowMinWidth = 340;
     auto inline const WindowMaxHeight = WindowMinHeight * 10;
     auto inline const WindowMaxWidth = WindowMinWidth * 10;
 

@@ -39,6 +39,10 @@ public:
         return juce::Decibels::gainToDecibels(meanSquare) * static_cast<FloatType>(0.5);
     }
 
+    inline FloatType getIntegratedTotalLoudness() override {
+        return getIntegratedLoudness() * static_cast<FloatType>(numBuffer);
+    }
+
     void process(const juce::AudioBuffer<FloatType> &buffer) override;
 
 private:

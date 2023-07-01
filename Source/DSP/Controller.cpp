@@ -65,11 +65,7 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
                                                                         mainBusNumChannel));
             auto actualGain = auxSubTracker.getMomentaryLoudness() -
                               mainSubTracker.getMomentaryLoudness();
-            if (accurate.load()) {
-                actualGain += (auxTracker.getIntegratedLoudness() -
-                               mainTracker.getIntegratedLoudness()) *
-                              static_cast<FloatType>(1.01);
-            }
+
             actualGain = juce::jlimit(-bound.load(), bound.load(), actualGain);
 
             // apply loudness makeup
@@ -88,7 +84,17 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
                                                         0,
                                                         static_cast<int>(fixedAudioBuffer.getSubSpec().maximumBlockSize))));
             }
-            if (std::abs(gain.load() - actualGain) >= 1 / sensitivity.load()) {
+            if (accurate.load() && std::abs(mainTracker.getIntegratedTotalLoudness() -
+                                             auxTracker.getIntegratedTotalLoudness()) >=
+                                    100 / sensitivity.load()) {
+                mainTracker.reset();
+                auxTracker.reset();
+                gain.store(actualGain);
+                gainDSP.setGainDecibels(
+                        gain.load() * ZLDsp::strength::formatV(strength.load()));
+            } else if (std::abs(gain.load() - actualGain) >= 1 / sensitivity.load()) {
+                mainTracker.reset();
+                auxTracker.reset();
                 gain.store(actualGain);
                 gainDSP.setGainDecibels(
                         gain.load() * ZLDsp::strength::formatV(strength.load()));

@@ -23,6 +23,8 @@ public:
 
     virtual inline FloatType getIntegratedLoudness() = 0;
 
+    virtual inline FloatType getIntegratedTotalLoudness() = 0;
+
     virtual void process(const juce::AudioBuffer<FloatType> &buffer) = 0;
 };
 

@@ -29,7 +29,7 @@ namespace ZLDsp {
         auto static constexpr name = "Window";
         inline auto static const range =
                 juce::NormalisableRange<float>(1.f, 50.0f, 1.f);
-        auto static constexpr defaultV = 20.f;
+        auto static constexpr defaultV = 50.f;
     };
 
     class lookahead : public FloatParameters<lookahead> {
@@ -79,7 +79,7 @@ namespace ZLDsp {
         auto static constexpr ID = "sensitivity";
         auto static constexpr name = "Sensitivity";
         inline auto static const range =
-                juce::NormalisableRange<float>(1.f, 100.f, 0.1f, 0.5f);
+                juce::NormalisableRange<float>(1.f, 100.f, 0.1f, 0.30103f);
         auto static constexpr defaultV = 10.f;
     };
 
@@ -105,7 +105,7 @@ namespace ZLDsp {
     public:
         auto static constexpr ID = "accurate";
         auto static constexpr name = "Accurate";
-        auto static constexpr defaultV = true;
+        auto static constexpr defaultV = false;
     };
 
     // choice

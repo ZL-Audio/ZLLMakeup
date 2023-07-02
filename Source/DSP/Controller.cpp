@@ -84,9 +84,11 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
                                                         0,
                                                         static_cast<int>(fixedAudioBuffer.getSubSpec().maximumBlockSize))));
             }
+            actualGain = static_cast<FloatType>(static_cast<int>(std::round(
+                    actualGain * 100))) / 100;
             if (accurate.load() && std::abs(mainTracker.getIntegratedTotalLoudness() -
-                                             auxTracker.getIntegratedTotalLoudness()) >=
-                                    100 / sensitivity.load()) {
+                                            auxTracker.getIntegratedTotalLoudness()) >=
+                                   100 / sensitivity.load()) {
                 mainTracker.reset();
                 auxTracker.reset();
                 gain.store(actualGain);

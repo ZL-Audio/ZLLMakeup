@@ -50,6 +50,7 @@ private:
     juce::AudioProcessorValueTreeState *apvts;
 
     std::atomic<FloatType> gain, lookahead, bound, strength, segment, window, sensitivity;
+    std::atomic<FloatType> externSensitivity;
     std::atomic<int> modeID;
     std::atomic<bool> ceil, accurate;
 

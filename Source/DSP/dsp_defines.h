@@ -19,8 +19,8 @@ namespace ZLDsp {
         auto static constexpr ID = "segment";
         auto static constexpr name = "Segment (ms)";
         inline auto static const range =
-                juce::NormalisableRange<float>(10.f, 100.f, 1.f);
-        auto static constexpr defaultV = 20.f;
+                juce::NormalisableRange<float>(10.f, 200.f, 1.f);
+        auto static constexpr defaultV = 40.f;
     };
 
     class window : public FloatParameters<window> {
@@ -41,6 +41,7 @@ namespace ZLDsp {
         auto static constexpr defaultV = 0.f;
 
         static float formatV(float v) { return v / 100.f; }
+
         static double formatV(double v) { return v / 100; }
     };
 
@@ -53,6 +54,7 @@ namespace ZLDsp {
         auto static constexpr defaultV = 100.0f;
 
         static float formatV(float v) { return v / 100.f; }
+
         static double formatV(double v) { return v / 100; }
     };
 
@@ -77,10 +79,16 @@ namespace ZLDsp {
     class sensitivity : public FloatParameters<sensitivity> {
     public:
         auto static constexpr ID = "sensitivity";
-        auto static constexpr name = "Sensitivity";
+        auto static constexpr name = "Sensitivity (%)";
         inline auto static const range =
-                juce::NormalisableRange<float>(1.f, 100.f, 0.1f, 0.30103f);
-        auto static constexpr defaultV = 10.f;
+                juce::NormalisableRange<float>(0.f, 100.f, 0.1f);
+        auto static constexpr defaultV = 50.f;
+
+        static float formatV(float v) {
+            return static_cast<float>(1 / std::pow(10, v / 25 - 1));
+        }
+
+        static double formatV(double v) { return 1 / std::pow(10, v / 25 - 1); }
     };
 
 

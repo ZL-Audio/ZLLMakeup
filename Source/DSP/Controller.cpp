@@ -11,7 +11,7 @@ Controller<FloatType>::Controller(juce::AudioProcessor *processor,
     lookahead.store(ZLDsp::lookahead::defaultV);
     bound.store(ZLDsp::bound::defaultV);
     strength.store(ZLDsp::strength::defaultV);
-    sensitivity.store(ZLDsp::sensitivity::defaultV);
+    setSensitivity(ZLDsp::sensitivity::defaultV);
     setSegmentToReset(ZLDsp::segment::defaultV);
     setWindow(ZLDsp::window::defaultV);
 
@@ -93,17 +93,17 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
             // apply bound
             actualGain = juce::jlimit(-bound.load(), bound.load(), actualGain);
             actualGain = static_cast<FloatType>(static_cast<int>(std::round(
-                    actualGain * 100))) / 100;
+                    actualGain * 1000))) / 1000;
             // compare with sensitivity
             if (accurate.load() && std::abs(mainTracker.getIntegratedTotalLoudness() -
                                             auxTracker.getIntegratedTotalLoudness()) >=
-                                   10 / sensitivity.load()) {
+                                   10 * sensitivity.load()) {
                 mainTracker.reset();
                 auxTracker.reset();
                 gain.store(actualGain);
                 gainDSP.setGainDecibels(
                         gain.load() * ZLDsp::strength::formatV(strength.load()));
-            } else if (std::abs(gain.load() - actualGain) >= 1 / sensitivity.load()) {
+            } else if (std::abs(gain.load() - actualGain) >= sensitivity.load()) {
                 mainTracker.reset();
                 auxTracker.reset();
                 gain.store(actualGain);
@@ -193,7 +193,8 @@ void Controller<FloatType>::setStrength(FloatType v) {
 
 template<typename FloatType>
 void Controller<FloatType>::setSensitivity(FloatType v) {
-    sensitivity.store(v);
+    externSensitivity.store(v);
+    sensitivity.store(ZLDsp::sensitivity::formatV(v));
 }
 
 template<typename FloatType>

@@ -36,7 +36,8 @@ public:
         if (numBuffer > 0) {
             meanSquare = iLoudness / static_cast<FloatType>(numBuffer);
         }
-        return juce::Decibels::gainToDecibels(meanSquare) * static_cast<FloatType>(0.5);
+        return secondPerBuffer * juce::Decibels::gainToDecibels(meanSquare) *
+               static_cast<FloatType>(0.5);
     }
 
     inline FloatType getIntegratedTotalLoudness() override {
@@ -50,6 +51,7 @@ private:
     bool kWeight = false;
     size_t size = 0, numBuffer = 0;
     FloatType peak = 0, mLoudness = 0, iLoudness = 0;
+    FloatType secondPerBuffer = 0.01;
     std::deque<FloatType> loudness;
     SecondOrderIIRFilter<FloatType> preFilter;
     SecondOrderIIRFilter<FloatType> revisedLowFrequencyBCurveFilter;

@@ -24,6 +24,7 @@ RMSTracker<FloatType>::~RMSTracker() {
 template<typename FloatType>
 void RMSTracker<FloatType>::prepareToPlay(const juce::dsp::ProcessSpec &spec) {
     reset();
+    secondPerBuffer = static_cast<FloatType>(spec.maximumBlockSize) / static_cast<FloatType>(spec.sampleRate);
     bufferCopy.setSize(static_cast<int>(spec.numChannels),
                        static_cast<int>(spec.maximumBlockSize));
     preFilter.prepareToPlay(static_cast<float>(spec.sampleRate),

@@ -108,7 +108,7 @@ void TopPanel::setMode(int modeID) {
         for (auto const &c: buttonList) {
             (*c)->setEditable(false);
         }
-        std::array comboboxList{&modeBox, &measurementBox};
+        std::array comboboxList{&measurementBox};
         for (auto const &c: comboboxList) {
             (*c)->setEditable(false);
         }

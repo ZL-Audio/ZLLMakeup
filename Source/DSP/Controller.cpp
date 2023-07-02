@@ -40,8 +40,10 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
     if (std::abs(lastBufferSize + lastBufferTime -
                  currentPos->getTimeInSamples().orFallback(0)) > buffer.getNumSamples()) {
         isPlaying.store(false);
-        gain.store(0);
-        gainDSP.setGainDecibels(0);
+        if (modeID.load() == ZLDsp::mode::effect) {
+            gain.store(0);
+            gainDSP.setGainDecibels(0);
+        }
         for (auto &f: {&mainSubTracker, &auxSubTracker, &mainTracker, &auxTracker}) {
             (*f).reset();
         }
@@ -66,15 +68,19 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
             auto actualGain = auxSubTracker.getMomentaryLoudness() -
                               mainSubTracker.getMomentaryLoudness();
 
-            actualGain = juce::jlimit(-bound.load(), bound.load(), actualGain);
 
-            // apply loudness makeup
+            // apply delay
             juce::dsp::AudioBlock<FloatType> block(fixedAudioBuffer.subBuffer);
             auto mainBlock = block.getSubsetChannelBlock(0,
                                                          static_cast<size_t>(mainBusNumChannel));
             delayLineDSP.process(
                     juce::dsp::ProcessContextReplacing<FloatType>(mainBlock));
-
+            // accumulate integrated error
+            if (accurate.load()) {
+                actualGain += auxTracker.getIntegratedLoudness() -
+                              mainTracker.getIntegratedLoudness();
+            }
+            // apply ceil
             if (ceil.load()) {
                 actualGain = juce::jmin(actualGain,
                                         -juce::Decibels::gainToDecibels(
@@ -84,11 +90,14 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
                                                         0,
                                                         static_cast<int>(fixedAudioBuffer.getSubSpec().maximumBlockSize))));
             }
+            // apply bound
+            actualGain = juce::jlimit(-bound.load(), bound.load(), actualGain);
             actualGain = static_cast<FloatType>(static_cast<int>(std::round(
                     actualGain * 100))) / 100;
+            // compare with sensitivity
             if (accurate.load() && std::abs(mainTracker.getIntegratedTotalLoudness() -
                                             auxTracker.getIntegratedTotalLoudness()) >=
-                                   100 / sensitivity.load()) {
+                                   10 / sensitivity.load()) {
                 mainTracker.reset();
                 auxTracker.reset();
                 gain.store(actualGain);
@@ -101,6 +110,7 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
                 gainDSP.setGainDecibels(
                         gain.load() * ZLDsp::strength::formatV(strength.load()));
             }
+            // apply final gain
             gainDSP.process(juce::dsp::ProcessContextReplacing<FloatType>(mainBlock));
 
             fixedAudioBuffer.pushSubBuffer();
@@ -110,8 +120,7 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
             mainTracker.process(m_processor->getBusBuffer(buffer, true, 0));
             auxTracker.process(m_processor->getBusBuffer(buffer, true, 1));
         }
-    }
-    if (modeID.load() == ZLDsp::mode::envelope) {
+    } else if (modeID.load() == ZLDsp::mode::envelope) {
         auto currentGain = juce::Decibels::decibelsToGain(
                 gain.load() * ZLDsp::strength::formatV(strength.load()));
         auto mainBuffer = m_processor->getBusBuffer(buffer, true, 0);
@@ -240,7 +249,7 @@ ControllerAttach<FloatType>::ControllerAttach(Controller<FloatType> &gainControl
                                               juce::AudioProcessorValueTreeState &parameters) {
     controller = &gainController;
     apvts = &parameters;
-    modeID.store(ZLDsp::mode::effect);
+    modeID.store(ZLDsp::mode::defaultI);
     startTimerHz(60);
     addListeners();
 }
@@ -307,12 +316,12 @@ void ControllerAttach<FloatType>::parameterChanged(const juce::String &parameter
         controller->setAccurate(static_cast<bool>(newValue));
     } else if (parameterID == ZLDsp::mode::ID) {
         modeID.store(static_cast<int>(newValue));
-        if (modeID.load() == ZLDsp::mode::effect) {
-            startTimerHz(10);
+        controller->setModeID(static_cast<int>(newValue));
+        if (static_cast<int>(newValue) == ZLDsp::mode::effect) {
+            startTimerHz(60);
         } else {
             stopTimer();
         }
-        controller->setModeID(static_cast<int>(newValue));
     } else if (parameterID == ZLDsp::measurement::ID) {
         controller->setMeasurementID(static_cast<int>(newValue));
     }

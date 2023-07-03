@@ -75,11 +75,6 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
                                                          static_cast<size_t>(mainBusNumChannel));
             delayLineDSP.process(
                     juce::dsp::ProcessContextReplacing<FloatType>(mainBlock));
-            // accumulate integrated error
-            if (accurate.load()) {
-                actualGain += auxTracker.getIntegratedLoudness() -
-                              mainTracker.getIntegratedLoudness();
-            }
             // apply ceil
             if (ceil.load()) {
                 actualGain = juce::jmin(actualGain,
@@ -148,7 +143,7 @@ void Controller<FloatType>::setSegment(FloatType v) {
     }
     delayLineDSP.prepare(subBusSpec);
     gainDSP.prepare(subBusSpec);
-    gainDSP.setRampDurationSeconds(static_cast<double>(v) / 4000);
+    gainDSP.setRampDurationSeconds(static_cast<double>(v) / 8192);
     delayLineDSP.setMaximumDelayInSamples(
             subBufferSize * static_cast<int>(ZLDsp::lookahead::range.end));
     setLookahead(lookahead.load());
@@ -157,14 +152,16 @@ void Controller<FloatType>::setSegment(FloatType v) {
 template<typename FloatType>
 void Controller<FloatType>::setLookahead(FloatType v) {
     lookahead.store(v);
-    auto latencyInSamples =
-            static_cast<int>(segment.load() / 1000 *
-                             ZLDsp::lookahead::formatV(lookahead.load()) * window.load() *
-                             static_cast<FloatType>(fixedAudioBuffer.getSubSpec().maximumBlockSize));
-    delayLineDSP.setDelay(static_cast<FloatType>(latencyInSamples));
-    m_processor->setLatencySamples(
-            static_cast<int>(fixedAudioBuffer.getLatencySamples()) +
-            latencyInSamples - 1);
+    if (modeID.load() == ZLDsp::mode::effect) {
+        auto latencyInSamples =
+                static_cast<int>(ZLDsp::lookahead::formatV(lookahead.load()) *
+                                 window.load() *
+                                 static_cast<FloatType>(fixedAudioBuffer.getSubSpec().maximumBlockSize));
+        delayLineDSP.setDelay(static_cast<FloatType>(latencyInSamples));
+        m_processor->setLatencySamples(
+                static_cast<int>(fixedAudioBuffer.getLatencySamples()) +
+                latencyInSamples - 1);
+    }
 }
 
 template<typename FloatType>
@@ -200,6 +197,11 @@ void Controller<FloatType>::setSensitivity(FloatType v) {
 template<typename FloatType>
 void Controller<FloatType>::setModeID(int ID) {
     modeID.store(ID);
+    if (modeID.load() == ZLDsp::mode::effect) {
+        setSegmentToReset(segment.load());
+    } else if (modeID.load() == ZLDsp::mode::envelope) {
+        m_processor->setLatencySamples(0);
+    }
 }
 
 template<typename FloatType>

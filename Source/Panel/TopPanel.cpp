@@ -14,8 +14,8 @@ TopPanel::TopPanel(juce::AudioProcessorValueTreeState &parameters,
                         parameters, sliderID[i], (*sliderList[i])->getSlider()));
     }
     // init buttons
-    std::array buttonList{&ceilButton, &accurateButton};
-    std::array buttonID{ZLDsp::ceil::ID, ZLDsp::accurate::ID};
+    std::array buttonList{&ceilButton, &accurateButton, &sideoutButton};
+    std::array buttonID{ZLDsp::ceil::ID, ZLDsp::accurate::ID, ZLDsp::sideout::ID};
     for (size_t i = 0; i < buttonList.size(); ++i) {
         *buttonList[i] = std::make_unique<ButtonComponent>(
                 parameters.getParameter(buttonID[i])->name);
@@ -58,7 +58,8 @@ void TopPanel::resized() {
 
     grid.items = {
             juce::GridItem(logoPanel).withArea(1, 1),
-            juce::GridItem(*gainValue).withArea(1, 2, 2, 5),
+            juce::GridItem(*gainValue).withArea(1, 2, 2, 4),
+            juce::GridItem(*sideoutButton).withArea(1, 4, 2, 5),
             juce::GridItem(*modeBox).withArea(2, 1),
             juce::GridItem(*measurementBox).withArea(2, 2),
             juce::GridItem(*accurateButton).withArea(2, 4),
@@ -74,7 +75,7 @@ void TopPanel::setFontSize(float size) {
     for (auto const &c: sliderList) {
         (*c)->setFontSize(size);
     }
-    std::array buttonList{&ceilButton, &accurateButton};
+    std::array buttonList{&ceilButton, &accurateButton, &sideoutButton};
     for (auto const &c: buttonList) {
         (*c)->setFontSize(size);
     }

@@ -41,6 +41,8 @@ public:
 
     void setCeil(bool f);
 
+    void setSideout(bool f);
+
     FloatType getGain();
 
     bool getIsPlaying();
@@ -52,7 +54,7 @@ private:
     std::atomic<FloatType> gain, lookahead, bound, strength, segment, window, sensitivity;
     std::atomic<FloatType> externSensitivity;
     std::atomic<int> modeID;
-    std::atomic<bool> ceil, accurate;
+    std::atomic<bool> ceil, accurate, sideout;
 
     juce::dsp::DelayLine<FloatType> delayLineDSP;
     juce::dsp::Gain<FloatType> gainDSP;

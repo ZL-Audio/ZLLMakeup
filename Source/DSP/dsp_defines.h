@@ -116,6 +116,13 @@ namespace ZLDsp {
         auto static constexpr defaultV = false;
     };
 
+    class sideout : public BoolParameters<sideout> {
+    public:
+        auto static constexpr ID = "side_out";
+        auto static constexpr name = "Side Out";
+        auto static constexpr defaultV = false;
+    };
+
     // choice
     template<class T>
     class ChoiceParameters {
@@ -163,7 +170,7 @@ namespace ZLDsp {
         layout.add(segment::get(), window::get(), lookahead::get(),
                    strength::get(), bound::get(), gain::get(),
                    sensitivity::get(),
-                   ceil::get(), accurate::get(),
+                   ceil::get(), accurate::get(), sideout::get(),
                    measurement::get(), mode::get());
         return layout;
     }

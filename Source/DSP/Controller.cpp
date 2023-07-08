@@ -17,6 +17,7 @@ Controller<FloatType>::Controller(juce::AudioProcessor *processor,
 
     ceil.store(ZLDsp::ceil::defaultV);
     accurate.store(ZLDsp::accurate::defaultV);
+    sideout.store(ZLDsp::sideout::defaultV);
 
     modeID.store(ZLDsp::mode::defaultI);
     setMeasurementID(ZLDsp::measurement::defaultI);
@@ -24,8 +25,7 @@ Controller<FloatType>::Controller(juce::AudioProcessor *processor,
 
 template<typename FloatType>
 void Controller<FloatType>::prepareToPlay(juce::dsp::ProcessSpec spec) {
-    mainTracker.prepareToPlay(spec);
-    auxTracker.prepareToPlay(spec);
+
     spec.numChannels = spec.numChannels * 2;
     fixedAudioBuffer.prepareToPlay(spec);
 }
@@ -63,18 +63,14 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
             mainSubTracker.process(
                     fixedAudioBuffer.getSubBufferChannels(0, mainBusNumChannel));
             auxSubTracker.process(fixedAudioBuffer.getSubBufferChannels(mainBusNumChannel,
-                                                                        2 *
                                                                         mainBusNumChannel));
             auto actualGain = auxSubTracker.getMomentaryLoudness() -
                               mainSubTracker.getMomentaryLoudness();
-
-
             // apply delay
             juce::dsp::AudioBlock<FloatType> block(fixedAudioBuffer.subBuffer);
             auto mainBlock = block.getSubsetChannelBlock(0,
                                                          static_cast<size_t>(mainBusNumChannel));
-            delayLineDSP.process(
-                    juce::dsp::ProcessContextReplacing<FloatType>(mainBlock));
+            delayLineDSP.process(juce::dsp::ProcessContextReplacing<FloatType>(block));
             // apply ceil
             if (ceil.load()) {
                 actualGain = juce::jmin(actualGain,
@@ -107,19 +103,30 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
             }
             // apply final gain
             gainDSP.process(juce::dsp::ProcessContextReplacing<FloatType>(mainBlock));
-
+            if (accurate.load()) {
+                mainTracker.process(
+                        fixedAudioBuffer.getSubBufferChannels(0, mainBusNumChannel));
+                auxTracker.process(
+                        fixedAudioBuffer.getSubBufferChannels(mainBusNumChannel,
+                                                              mainBusNumChannel));
+            }
+            if (sideout.load()) {
+                mainBlock.copyFrom(block.getSubsetChannelBlock(
+                        static_cast<size_t>(mainBusNumChannel),
+                        static_cast<size_t>(mainBusNumChannel)));
+            }
             fixedAudioBuffer.pushSubBuffer();
         }
         fixedAudioBuffer.popBuffer(buffer);
-        if (accurate.load()) {
-            mainTracker.process(m_processor->getBusBuffer(buffer, true, 0));
-            auxTracker.process(m_processor->getBusBuffer(buffer, true, 1));
-        }
     } else if (modeID.load() == ZLDsp::mode::envelope) {
         auto currentGain = juce::Decibels::decibelsToGain(
                 gain.load() * ZLDsp::strength::formatV(strength.load()));
         auto mainBuffer = m_processor->getBusBuffer(buffer, true, 0);
-        mainBuffer.applyGain(currentGain);
+        if (sideout.load()) {
+            mainBuffer.makeCopyOf(m_processor->getBusBuffer(buffer, true, 1), true);
+        } else {
+            mainBuffer.applyGain(currentGain);
+        }
     }
 }
 
@@ -137,11 +144,11 @@ void Controller<FloatType>::setSegment(FloatType v) {
 
     auto subSpec = fixedAudioBuffer.getSubSpec();
     auto subBusSpec = subSpec;
+    delayLineDSP.prepare(subBusSpec);
     subBusSpec.numChannels = subBusSpec.numChannels / 2;
-    for (auto &f: {&mainSubTracker, &auxSubTracker}) {
+    for (auto &f: {&mainSubTracker, &auxSubTracker, &mainTracker, &auxTracker}) {
         (*f).prepareToPlay(subBusSpec);
     }
-    delayLineDSP.prepare(subBusSpec);
     gainDSP.prepare(subBusSpec);
     gainDSP.setRampDurationSeconds(static_cast<double>(v) / 8192);
     delayLineDSP.setMaximumDelayInSamples(
@@ -232,6 +239,11 @@ void Controller<FloatType>::setAccurate(bool f) {
 }
 
 template<typename FloatType>
+void Controller<FloatType>::setSideout(bool f) {
+    sideout.store(f);
+}
+
+template<typename FloatType>
 FloatType Controller<FloatType>::getGain() {
     return gain.load();
 }
@@ -263,7 +275,7 @@ ControllerAttach<FloatType>::~ControllerAttach() {
     std::array IDs{ZLDsp::segment::ID, ZLDsp::window::ID, ZLDsp::lookahead::ID,
                    ZLDsp::strength::ID, ZLDsp::bound::ID, ZLDsp::gain::ID,
                    ZLDsp::sensitivity::ID,
-                   ZLDsp::ceil::ID, ZLDsp::accurate::ID,
+                   ZLDsp::ceil::ID, ZLDsp::accurate::ID, ZLDsp::sideout::ID,
                    ZLDsp::measurement::ID, ZLDsp::mode::ID};
     for (auto &ID: IDs) {
         apvts->removeParameterListener(ID, this);
@@ -287,7 +299,7 @@ void ControllerAttach<FloatType>::addListeners() {
     std::array IDs{ZLDsp::segment::ID, ZLDsp::window::ID, ZLDsp::lookahead::ID,
                    ZLDsp::strength::ID, ZLDsp::bound::ID, ZLDsp::gain::ID,
                    ZLDsp::sensitivity::ID,
-                   ZLDsp::ceil::ID, ZLDsp::accurate::ID,
+                   ZLDsp::ceil::ID, ZLDsp::accurate::ID, ZLDsp::sideout::ID,
                    ZLDsp::measurement::ID, ZLDsp::mode::ID};
     for (auto &ID: IDs) {
         apvts->addParameterListener(ID, this);
@@ -317,6 +329,8 @@ void ControllerAttach<FloatType>::parameterChanged(const juce::String &parameter
         controller->setCeil(static_cast<bool>(newValue));
     } else if (parameterID == ZLDsp::accurate::ID) {
         controller->setAccurate(static_cast<bool>(newValue));
+    } else if (parameterID == ZLDsp::sideout::ID) {
+        controller->setSideout(static_cast<bool>(newValue));
     } else if (parameterID == ZLDsp::mode::ID) {
         modeID.store(static_cast<int>(newValue));
         controller->setModeID(static_cast<int>(newValue));

@@ -30,7 +30,7 @@ private:
     std::unique_ptr<ChangingValueComponent> gainValue;
     std::unique_ptr<ComboboxComponent> modeBox, measurementBox;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::ComboBoxAttachment> comboboxAttachments;
-    std::unique_ptr<ButtonComponent> ceilButton, accurateButton;
+    std::unique_ptr<ButtonComponent> ceilButton, accurateButton, sideoutButton;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::ButtonAttachment> buttonAttachments;
     std::unique_ptr<RotarySliderComponent> segmentSlider;
     juce::OwnedArray<juce::AudioProcessorValueTreeState::SliderAttachment> sliderAttachments;

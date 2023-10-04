@@ -1,9 +1,10 @@
 #pragma once
 
+#include "DSP/controller.h"
+#include "State/dummy_processor.h"
+#include "State/state_definitions.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_dsp/juce_dsp.h>
-#include "DSP/dsp_defines.h"
-#include "DSP/Controller.h"
 
 #if (MSVC)
 #include "ipps.h"
@@ -11,7 +12,9 @@
 
 class PluginProcessor : public juce::AudioProcessor {
 public:
+    DummyProcessor dummyProcessor;
     juce::AudioProcessorValueTreeState parameters;
+    juce::AudioProcessorValueTreeState states;
 
     PluginProcessor();
 

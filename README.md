@@ -1,10 +1,12 @@
-<img src="Docs/logo.svg" width=56.58%>
+<img src="docs/logo.svg" width=56.58%>
 
 # ZLLMakeup
+![pluginval](<https://github.com/ZL-Audio/ZLLMakeup/workflows/macOS\/Windows\/Linux Test/badge.svg?branch=main>) 
+
 
 ZLLMakeup is a loudness make-up plugin.
 
-<img src="Docs/screenshot.png" width=66.11%>
+<img src="docs/screenshot.png" width=66.11%>
 
 ## Usage
 

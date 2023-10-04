@@ -10,16 +10,14 @@ PluginProcessor::PluginProcessor()
                                              true)
                                  .withInput("Aux", juce::AudioChannelSet::stereo(),
                                             true)),
-          parameters(*this, nullptr, juce::Identifier("ZLLMakeupParameters"),
-                     ZLDsp::getParameterLayout()),
+          dummyProcessor(),
+          parameters(*this, nullptr, juce::Identifier("ZLLMakeupParameters"), zldsp::getParameterLayout()),
+          states(dummyProcessor, nullptr, juce::Identifier("ZLLMakeupStates"), zlstate::getParameterLayout()),
           controller(this, parameters),
           controllerAttach(controller, parameters) {
-    parameters.state.addChild (
-            { "uiState", { { "width", ZLInterface::WindowWidth }, { "height", ZLInterface::WindowHeight } }, {} }, -1, nullptr);
 }
 
-PluginProcessor::~PluginProcessor() {
-}
+PluginProcessor::~PluginProcessor() = default;
 
 //==============================================================================
 const juce::String PluginProcessor::getName() const {
@@ -133,10 +131,10 @@ void PluginProcessor::getStateInformation(juce::MemoryBlock &destData) {
 
 void PluginProcessor::setStateInformation(const void *data, int sizeInBytes) {
     std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
-
     if (xmlState != nullptr)
-        if (xmlState->hasTagName(parameters.state.getType()))
+        if (xmlState->hasTagName(parameters.state.getType())) {
             parameters.replaceState(juce::ValueTree::fromXml(*xmlState));
+        }
 }
 
 //==============================================================================
@@ -145,6 +143,6 @@ juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {
     return new PluginProcessor();
 }
 
-Controller<float>* PluginProcessor::getController() {
+Controller<float> *PluginProcessor::getController() {
     return &controller;
 }

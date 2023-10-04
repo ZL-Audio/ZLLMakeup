@@ -1,7 +1,7 @@
 <img src="docs/logo.svg" width=56.58%>
 
 # ZLLMakeup
-![pluginval](<https://github.com/ZL-Audio/ZLLMakeup/workflows/macOS\/Windows\/Linux Test/badge.svg?branch=main>) 
+![pluginval](<https://github.com/ZL-Audio/ZLLMakeup/actions/workflows/cmake_full_test.yml/badge.svg?branch=main>) 
 
 
 ZLLMakeup is a loudness make-up plugin.

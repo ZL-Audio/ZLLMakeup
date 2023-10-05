@@ -1,4 +1,7 @@
-<img src="docs/logo.svg" width=56.58%>
+<p float="left">
+  <img src="docs/compact_darkblue_flat.svg" width="33%" />
+  <img src="docs/logo.svg" width="7.5%" />
+</p>
 
 # ZLLMakeup
 ![pluginval](<https://github.com/ZL-Audio/ZLLMakeup/actions/workflows/cmake_full_test.yml/badge.svg?branch=main>) 

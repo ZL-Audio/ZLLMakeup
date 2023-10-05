@@ -6,7 +6,7 @@
 
 ZLLMakeup is a loudness make-up plugin.
 
-<img src="docs/screenshot.png" width=66.11%>
+<img src="docs/screenshot.png" width=66.76%>
 
 ## Usage
 

@@ -4,15 +4,14 @@ template<typename FloatType>
 Controller<FloatType>::Controller(juce::AudioProcessor *processor,
                                   juce::AudioProcessorValueTreeState &parameters) :
         fixedAudioBuffer() {
-    m_processor = processor;
-    apvts = &parameters;
+    processorRef = processor;
 
     gain.store(zldsp::gain::defaultV);
     lookahead.store(zldsp::lookahead::defaultV);
     bound.store(zldsp::bound::defaultV);
     strength.store(zldsp::strength::defaultV);
     setSensitivity(zldsp::sensitivity::defaultV);
-    setSegmentToReset(zldsp::segment::defaultV);
+    setSegment(zldsp::segment::defaultV);
     setWindow(zldsp::window::defaultV);
 
     ceil.store(zldsp::ceil::defaultV);
@@ -32,11 +31,7 @@ void Controller<FloatType>::prepareToPlay(juce::dsp::ProcessSpec spec) {
 
 template<typename FloatType>
 void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
-    if (isSegmentReset.load()) {
-        isSegmentReset.store(false);
-        setSegment(segment.load());
-    }
-    auto currentPos = m_processor->getPlayHead()->getPosition();
+    auto currentPos = processorRef->getPlayHead()->getPosition();
     if (std::abs(lastBufferSize + lastBufferTime -
                  currentPos->getTimeInSamples().orFallback(0)) > buffer.getNumSamples()) {
         isPlaying.store(false);
@@ -121,9 +116,9 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
     } else if (modeID.load() == zldsp::mode::envelope) {
         auto currentGain = juce::Decibels::decibelsToGain(
                 gain.load() * zldsp::strength::formatV(strength.load()));
-        auto mainBuffer = m_processor->getBusBuffer(buffer, true, 0);
+        auto mainBuffer = processorRef->getBusBuffer(buffer, true, 0);
         if (sideout.load()) {
-            mainBuffer.makeCopyOf(m_processor->getBusBuffer(buffer, true, 1), true);
+            mainBuffer.makeCopyOf(processorRef->getBusBuffer(buffer, true, 1), true);
         } else {
             mainBuffer.applyGain(currentGain);
         }
@@ -131,13 +126,9 @@ void Controller<FloatType>::processBlock(juce::AudioBuffer<FloatType> &buffer) {
 }
 
 template<typename FloatType>
-void Controller<FloatType>::setSegmentToReset(FloatType v) {
-    segment.store(v);
-    isSegmentReset.store(true);
-}
-
-template<typename FloatType>
 void Controller<FloatType>::setSegment(FloatType v) {
+    segment.store(v);
+    const juce::GenericScopedLock<juce::CriticalSection> processLock(processorRef->getCallbackLock());
     auto subBufferSize = static_cast<int>(std::round(
             v * fixedAudioBuffer.getMainSpec().sampleRate / 1000));
     fixedAudioBuffer.setSubBufferSize(subBufferSize);
@@ -150,29 +141,39 @@ void Controller<FloatType>::setSegment(FloatType v) {
         (*f).prepareToPlay(subBusSpec);
     }
     gainDSP.prepare(subBusSpec);
-    gainDSP.setRampDurationSeconds(static_cast<double>(v) / 8192);
+    gainDSP.setRampDurationSeconds(static_cast<double>(1) / 1024);
     delayLineDSP.setMaximumDelayInSamples(
             subBufferSize * static_cast<int>(zldsp::lookahead::range.end));
     setLookahead(lookahead.load());
 }
 
 template<typename FloatType>
-void Controller<FloatType>::setLookahead(FloatType v) {
+void Controller<FloatType>::setLookahead(FloatType v, bool useLock) {
     lookahead.store(v);
-    if (modeID.load() == zldsp::mode::effect) {
-        auto latencyInSamples =
-                static_cast<int>(zldsp::lookahead::formatV(lookahead.load()) *
-                                 window.load() *
-                                 static_cast<FloatType>(fixedAudioBuffer.getSubSpec().maximumBlockSize));
-        delayLineDSP.setDelay(static_cast<FloatType>(latencyInSamples));
-        m_processor->setLatencySamples(
-                static_cast<int>(fixedAudioBuffer.getLatencySamples()) +
-                latencyInSamples - 1);
+    if (useLock) {
+        const juce::GenericScopedLock<juce::CriticalSection> processLock(processorRef->getCallbackLock());
+        toSetLookAhead();
+    } else {
+        toSetLookAhead();
     }
 }
 
 template<typename FloatType>
+void Controller<FloatType>::toSetLookAhead() {
+    if (modeID.load() == zldsp::mode::effect) {
+        auto latencyInSamples =
+                static_cast<int>(zldsp::lookahead::formatV(lookahead.load()) * window.load() *
+                                 static_cast<FloatType>(fixedAudioBuffer.getSubSpec().maximumBlockSize));
+        delayLineDSP.setDelay(static_cast<FloatType>(latencyInSamples));
+        processorRef->setLatencySamples(
+                static_cast<int>(fixedAudioBuffer.getLatencySamples()) + latencyInSamples);
+    }
+}
+
+
+template<typename FloatType>
 void Controller<FloatType>::setWindow(FloatType v) {
+    const juce::GenericScopedLock<juce::CriticalSection> processLock(processorRef->getCallbackLock());
     window.store(v);
     for (auto &f: {&mainSubTracker, &auxSubTracker}) {
         (*f).setMomentarySize(static_cast<size_t>(v));
@@ -205,9 +206,9 @@ template<typename FloatType>
 void Controller<FloatType>::setModeID(int ID) {
     modeID.store(ID);
     if (modeID.load() == zldsp::mode::effect) {
-        setSegmentToReset(segment.load());
+        setSegment(segment.load());
     } else if (modeID.load() == zldsp::mode::envelope) {
-        m_processor->setLatencySamples(0);
+        processorRef->setLatencySamples(0);
     }
 }
 
@@ -272,7 +273,9 @@ ControllerAttach<FloatType>::ControllerAttach(Controller<FloatType> &gainControl
 template<typename FloatType>
 ControllerAttach<FloatType>::~ControllerAttach() {
     stopTimer();
-    std::array IDs{ zldsp::segment::ID, zldsp::window::ID, zldsp::lookahead::ID, zldsp::strength::ID, zldsp::bound::ID, zldsp::gain::ID, zldsp::sensitivity::ID, zldsp::ceil::ID, zldsp::accurate::ID, zldsp::sideout::ID, zldsp::measurement::ID, zldsp::mode::ID};
+    std::array IDs{zldsp::segment::ID, zldsp::window::ID, zldsp::lookahead::ID, zldsp::strength::ID, zldsp::bound::ID,
+                   zldsp::gain::ID, zldsp::sensitivity::ID, zldsp::ceil::ID, zldsp::accurate::ID, zldsp::sideout::ID,
+                   zldsp::measurement::ID, zldsp::mode::ID};
     for (auto &ID: IDs) {
         apvts->removeParameterListener(ID, this);
     }
@@ -284,7 +287,7 @@ void ControllerAttach<FloatType>::timerCallback() {
         apvts->getParameter(zldsp::gain::ID)->beginChangeGesture();
         apvts->getParameter(zldsp::gain::ID)
                 ->setValueNotifyingHost(
-                zldsp::gain::range.convertTo0to1(
+                        zldsp::gain::range.convertTo0to1(
                                 static_cast<float>(controller->getGain())));
         apvts->getParameter(zldsp::gain::ID)->endChangeGesture();
     }
@@ -292,7 +295,9 @@ void ControllerAttach<FloatType>::timerCallback() {
 
 template<typename FloatType>
 void ControllerAttach<FloatType>::addListeners() {
-    std::array IDs{ zldsp::segment::ID, zldsp::window::ID, zldsp::lookahead::ID, zldsp::strength::ID, zldsp::bound::ID, zldsp::gain::ID, zldsp::sensitivity::ID, zldsp::ceil::ID, zldsp::accurate::ID, zldsp::sideout::ID, zldsp::measurement::ID, zldsp::mode::ID};
+    std::array IDs{zldsp::segment::ID, zldsp::window::ID, zldsp::lookahead::ID, zldsp::strength::ID, zldsp::bound::ID,
+                   zldsp::gain::ID, zldsp::sensitivity::ID, zldsp::ceil::ID, zldsp::accurate::ID, zldsp::sideout::ID,
+                   zldsp::measurement::ID, zldsp::mode::ID};
     for (auto &ID: IDs) {
         apvts->addParameterListener(ID, this);
     }
@@ -302,7 +307,7 @@ template<typename FloatType>
 void ControllerAttach<FloatType>::parameterChanged(const juce::String &parameterID,
                                                    float newValue) {
     if (parameterID == zldsp::segment::ID) {
-        controller->setSegmentToReset(newValue);
+        controller->setSegment(newValue);
     } else if (parameterID == zldsp::window::ID) {
         controller->setWindow(newValue);
     } else if (parameterID == zldsp::lookahead::ID) {

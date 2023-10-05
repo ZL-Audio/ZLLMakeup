@@ -38,7 +38,7 @@ public:
     }
 
     ~MainPanelAttach() override {
-        apvts->addParameterListener(zldsp::mode::ID, this);
+        apvts->removeParameterListener(zldsp::mode::ID, this);
     }
 
     void parameterChanged(const juce::String &parameterID, float newValue) override {

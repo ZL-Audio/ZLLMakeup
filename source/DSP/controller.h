@@ -17,11 +17,9 @@ public:
 
     void processBlock(juce::AudioBuffer<FloatType> &buffer);
 
-    void setSegmentToReset(FloatType v);
-
     void setSegment(FloatType v);
 
-    void setLookahead(FloatType v);
+    void setLookahead(FloatType v, bool useLock = true);
 
     void setWindow(FloatType v);
 
@@ -48,8 +46,7 @@ public:
     bool getIsPlaying();
 
 private:
-    juce::AudioProcessor *m_processor;
-    juce::AudioProcessorValueTreeState *apvts;
+    juce::AudioProcessor *processorRef;
 
     std::atomic<FloatType> gain, lookahead, bound, strength, segment, window, sensitivity;
     std::atomic<FloatType> externSensitivity;
@@ -58,12 +55,14 @@ private:
 
     juce::dsp::DelayLine<FloatType> delayLineDSP;
     juce::dsp::Gain<FloatType> gainDSP;
-    std::atomic<bool> isPlaying = false, isSegmentReset = false;
+    std::atomic<bool> isPlaying = false;
     int64_t lastBufferSize = 0, lastBufferTime = 0;
 
     fixedBuffer::FixedAudioBuffer<FloatType> fixedAudioBuffer;
     RMSTracker<FloatType> mainSubTracker, auxSubTracker;
     RMSTracker<FloatType> mainTracker, auxTracker;
+
+    void toSetLookAhead();
 };
 
 template<typename FloatType>

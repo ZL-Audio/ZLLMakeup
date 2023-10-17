@@ -4,15 +4,13 @@ template<typename FloatType>
 Controller<FloatType>::Controller(juce::AudioProcessor *processor,
                                   juce::AudioProcessorValueTreeState &parameters) :
         fixedAudioBuffer() {
+    juce::ignoreUnused(parameters);
     processorRef = processor;
 
     gain.store(zldsp::gain::defaultV);
     lookahead.store(zldsp::lookahead::defaultV);
     bound.store(zldsp::bound::defaultV);
     strength.store(zldsp::strength::defaultV);
-    setSensitivity(zldsp::sensitivity::defaultV);
-    setSegment(zldsp::segment::defaultV);
-    setWindow(zldsp::window::defaultV);
 
     ceil.store(zldsp::ceil::defaultV);
     accurate.store(zldsp::accurate::defaultV);
@@ -20,6 +18,11 @@ Controller<FloatType>::Controller(juce::AudioProcessor *processor,
 
     modeID.store(zldsp::mode::defaultI);
     setMeasurementID(zldsp::measurement::defaultI);
+
+    setSensitivity(zldsp::sensitivity::defaultV);
+
+    setSegment(zldsp::segment::defaultV);
+    setWindow(zldsp::window::defaultV);
 }
 
 template<typename FloatType>
@@ -27,6 +30,7 @@ void Controller<FloatType>::prepareToPlay(juce::dsp::ProcessSpec spec) {
 
     spec.numChannels = spec.numChannels * 2;
     fixedAudioBuffer.prepare(spec);
+    setSegment(zldsp::segment::defaultV);
 }
 
 template<typename FloatType>
@@ -144,7 +148,7 @@ void Controller<FloatType>::setSegment(FloatType v) {
     gainDSP.setRampDurationSeconds(static_cast<double>(1) / 1024);
     delayLineDSP.setMaximumDelayInSamples(
             subBufferSize * static_cast<int>(zldsp::lookahead::range.end));
-    setLookahead(lookahead.load());
+    setLookahead(lookahead.load(), false);
 }
 
 template<typename FloatType>
@@ -170,7 +174,6 @@ void Controller<FloatType>::toSetLookAhead() {
     }
 }
 
-
 template<typename FloatType>
 void Controller<FloatType>::setWindow(FloatType v) {
     const juce::GenericScopedLock<juce::CriticalSection> processLock(processorRef->getCallbackLock());
@@ -178,7 +181,7 @@ void Controller<FloatType>::setWindow(FloatType v) {
     for (auto &f: {&mainSubTracker, &auxSubTracker}) {
         (*f).setMomentarySize(static_cast<size_t>(v));
     }
-    setLookahead(lookahead.load());
+    setLookahead(lookahead.load(), false);
 }
 
 template<typename FloatType>
